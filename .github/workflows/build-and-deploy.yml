@@ -44,30 +44,7 @@ jobs:
     name: 🚀 Deploy to ${{ matrix.id }}
     runs-on: ubuntu-latest
     needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: demo_multi_app_cat
-            name: thadaw-demo-multi-app-cat
-            resourceGroup: rg-thadaw-demo-multi-app
-            slot: production
-            subscription: Azure Subscription
-          - id: demo_multi_app_dog
-            name: thadaw-demo-multi-app-dog
-            resourceGroup: rg-thadaw-demo-multi-app
-            slot: production
-            subscription: Azure Subscription
-          - id: demo_multi_app_ant
-            name: thadaw-demo-multi-app-ant
-            resourceGroup: rg-thadaw-demo-multi-app
-            slot: production
-            subscription: Azure Subscription
-
-
     steps:
-      - name: Deploy
-        run: echo "${{ matrix.id }}"
       - name: Download artifact from build job
         uses: actions/download-artifact@v2
         with:
@@ -75,6 +52,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ matrix.name }}
-          publish-profile: ${{ secrets[format(env.publish_profile_template, matrix.id)] }}
+          app-name: ${{ secrets.app_service_name }}
+          publish-profile: ${{ secrets.app_service_publish_profile }}
           package: .
+          
