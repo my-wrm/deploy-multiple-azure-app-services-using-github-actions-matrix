@@ -1,14 +1,14 @@
-
 name: "Build and Deploy .NET Core"
 
 # Controls when the workflow will run
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  push:
 
 # This env is sharing between jobs
 env:
-  dotnet_version: '6.0'
+  dotnet_version: "6.0"
   artifact_name: web-api
   project_path: src/DemoWebAPI
   # use {0} for replace expression: https://docs.github.com/en/actions/learn-github-actions/expressions#format
@@ -24,7 +24,37 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ env.dotnet_version }} 
+          dotnet-version: ${{ env.dotnet_version }}
+
+      - run: |
+          cd src
+          pwd
+          ls -la
+          tree
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-dotnet
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: |
+            **/[Dd]ebug/
+            **/[Dd]ebugPublic/
+            **/[Bb]in/
+            **/[Oo]bj/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - run: |
+          cd src
+          pwd
+          ls -la
+          tree
 
       - name: Publish folder
         run: |
@@ -32,27 +62,33 @@ jobs:
           dotnet restore
           dotnet build --configuration Release
           dotnet publish --configuration Release --output ./output
-          
+
+      - run: |
+          cd src
+          pwd
+          ls -la
+          tree
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.artifact_name }}
-          path: '${{ env.project_path }}/output'
-          retention-days: 1  # Keep artifact on remote only 1 day
+          path: "${{ env.project_path }}/output"
+          retention-days: 1 # Keep artifact on remote only 1 day
 
-  deploy:
-    name: 🚀 Deploy to ${{ matrix.id }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ env.artifact_name }}
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ secrets.app_service_name }}
-          publish-profile: ${{ secrets.app_service_publish_profile }}
-          package: .
-          
+
+  # deploy:
+  #   name: 🚀 Deploy to ${{ matrix.id }}
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - name: Download artifact from build job
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: ${{ env.artifact_name }}
+  #     - name: Deploy to Azure Web App
+  #       uses: azure/webapps-deploy@v2
+  #       with:
+  #         app-name: ${{ secrets.app_service_name }}
+  #         publish-profile: ${{ secrets.app_service_publish_profile }}
+  #         package: .
